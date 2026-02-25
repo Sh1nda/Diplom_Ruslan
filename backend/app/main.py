@@ -9,7 +9,7 @@ from app.db.session import engine
 # ВАЖНО: импортируем модели ДО create_all()
 import app.db.init_models
 
-# Создаём таблицы (для простоты, без Alembic)
+# Создание таблиц (без Alembic, для простоты)
 Base.metadata.create_all(bind=engine)
 
 # Инициализация приложения
@@ -33,6 +33,7 @@ from app.api import (
     routes_discipline,
     routes_documents,
     routes_courses,
+    routes_groups,   # ← если добавишь группы
 )
 
 app.include_router(routes_auth.router, prefix="/api")
@@ -42,3 +43,4 @@ app.include_router(routes_attendance.router, prefix="/api")
 app.include_router(routes_discipline.router, prefix="/api")
 app.include_router(routes_documents.router, prefix="/api")
 app.include_router(routes_courses.router, prefix="/api")
+app.include_router(routes_groups.router, prefix="/api")  # ← если есть

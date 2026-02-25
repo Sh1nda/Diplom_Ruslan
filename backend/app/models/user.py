@@ -12,6 +12,8 @@ class UserRole(str, enum.Enum):
     CADET = "CADET"
 
 
+from sqlalchemy.orm import relationship
+
 class User(Base):
     __tablename__ = "users"
 
@@ -21,3 +23,7 @@ class User(Base):
     hashed_password = Column(String(256), nullable=False)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.CADET)
     is_active = Column(Boolean, default=True)
+
+    # группы, которыми командует этот пользователь
+    groups_commanded = relationship("Group", back_populates="commander")
+

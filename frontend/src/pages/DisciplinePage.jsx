@@ -1,104 +1,152 @@
-import React from "react";
-
-import { useEffect, useState } from "react";
-import { getDiscipline, createDisciplineRecord } from "../api/discipline";
+import React, { useEffect, useState } from "react";
+import { getGroups } from "../api/groups";
+import { getDiscipline, createDiscipline, deleteDiscipline } from "../api/discipline";
+import api from "../api/axios";
 
 export default function DisciplinePage() {
+  const [groups, setGroups] = useState([]);
+  const [cadets, setCadets] = useState([]);
   const [records, setRecords] = useState([]);
-  const [form, setForm] = useState({
-    cadet_id: "",
-    commander_id: "",
-    violation_type: "",
-    description: "",
-    action_taken: "",
-  });
 
-  async function load() {
-    const data = await getDiscipline();
+  const [groupId, setGroupId] = useState("");
+  const [cadetId, setCadetId] = useState("");
+  const [violationType, setViolationType] = useState("");
+  const [comment, setComment] = useState("");
+
+  useEffect(() => {
+    loadGroups();
+  }, []);
+
+  useEffect(() => {
+    if (groupId) {
+      loadCadets(groupId);
+      loadRecords({ group_id: groupId });
+    } else {
+      setCadets([]);
+      setRecords([]);
+    }
+  }, [groupId]);
+
+  async function loadGroups() {
+    const data = await getGroups();
+    setGroups(data);
+  }
+
+  async function loadCadets(groupId) {
+    const res = await api.get("/groups/" + groupId + "/members");
+    // тут можно запросить подробные данные по кадетам, если нужно
+    setCadets(res.data);
+  }
+
+  async function loadRecords(params) {
+    const data = await getDiscipline(params);
     setRecords(data);
   }
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function submit(e) {
+  async function submitRecord(e) {
     e.preventDefault();
-    await createDisciplineRecord({
-      cadet_id: Number(form.cadet_id),
-      commander_id: Number(form.commander_id),
-      violation_type: form.violation_type,
-      description: form.description,
-      action_taken: form.action_taken,
+    if (!groupId || !cadetId || !violationType) return;
+
+    await createDiscipline({
+      group_id: Number(groupId),
+      cadet_id: Number(cadetId),
+      violation_type: violationType,
+      comment: comment || null,
     });
-    setForm({
-      cadet_id: "",
-      commander_id: "",
-      violation_type: "",
-      description: "",
-      action_taken: "",
-    });
-    load();
+
+    setViolationType("");
+    setComment("");
+    await loadRecords({ group_id: groupId });
+  }
+
+  async function removeRecord(id) {
+    await deleteDiscipline(id);
+    await loadRecords({ group_id: groupId });
   }
 
   return (
     <div>
-      <h2>Дисциплинарные записи</h2>
-      <form onSubmit={submit}>
-        <input
-          placeholder="ID курсанта"
-          value={form.cadet_id}
-          onChange={(e) => setForm({ ...form, cadet_id: e.target.value })}
-        />
-        <input
-          placeholder="ID командира"
-          value={form.commander_id}
-          onChange={(e) => setForm({ ...form, commander_id: e.target.value })}
-        />
-        <input
-          placeholder="Тип нарушения"
-          value={form.violation_type}
-          onChange={(e) =>
-            setForm({ ...form, violation_type: e.target.value })
-          }
-        />
-        <input
-          placeholder="Описание"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-        <input
-          placeholder="Принятые меры"
-          value={form.action_taken}
-          onChange={(e) =>
-            setForm({ ...form, action_taken: e.target.value })
-          }
-        />
-        <button type="submit">Добавить</button>
+      <h2>Дисциплина</h2>
+
+      <form onSubmit={submitRecord} style={{ marginBottom: 20 }}>
+        <div>
+          <label>Группа</label>
+          <select
+            value={groupId}
+            onChange={(e) => {
+              setGroupId(e.target.value);
+              setCadetId("");
+            }}
+          >
+            <option value="">Выберите группу</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                #{g.id} {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Кадет</label>
+          <select
+            value={cadetId}
+            onChange={(e) => setCadetId(e.target.value)}
+            disabled={!groupId}
+          >
+            <option value="">Выберите кадета</option>
+            {cadets.map((m) => (
+              <option key={m.id} value={m.cadet_id}>
+                #{m.cadet_id}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Тип нарушения</label>
+          <input
+            value={violationType}
+            onChange={(e) => setViolationType(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label>Комментарий</label>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
+        </div>
+
+        <button type="submit">Добавить запись</button>
       </form>
 
-      <table border="1" cellPadding="4" style={{ marginTop: 20 }}>
+      <h3>Журнал дисциплины</h3>
+      <table style={{ width: "100%" }}>
         <thead>
           <tr>
             <th>ID</th>
-            <th>Курсант</th>
-            <th>Командир</th>
+            <th>Группа</th>
+            <th>Кадет</th>
             <th>Тип</th>
-            <th>Описание</th>
-            <th>Меры</th>
+            <th>Комментарий</th>
             <th>Дата</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {records.map((r) => (
             <tr key={r.id}>
               <td>{r.id}</td>
+              <td>{r.group_id}</td>
               <td>{r.cadet_id}</td>
-              <td>{r.commander_id}</td>
               <td>{r.violation_type}</td>
-              <td>{r.description}</td>
-              <td>{r.action_taken}</td>
-              <td>{r.created_at}</td>
+              <td>{r.comment}</td>
+              <td>{new Date(r.created_at).toLocaleString()}</td>
+              <td>
+                <button onClick={() => removeRecord(r.id)}>Удалить</button>
+              </td>
             </tr>
           ))}
         </tbody>

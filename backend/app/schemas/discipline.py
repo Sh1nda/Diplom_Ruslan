@@ -1,22 +1,24 @@
-# backend/app/schemas/discipline.py
-from datetime import datetime
 from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
 
 
 class DisciplineBase(BaseModel):
+    group_id: int
     cadet_id: int
     violation_type: str
-    description: str | None = None
-    action_taken: str | None = None
+    description: Optional[str] = None
+    action_taken: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class DisciplineCreate(DisciplineBase):
-    commander_id: int
+    pass
 
 
-class DisciplineOut(DisciplineBase):
+class DisciplineRecordOut(DisciplineBase):
     id: int
-    commander_id: int
+    created_by_id: int
     created_at: datetime
 
     class Config:
