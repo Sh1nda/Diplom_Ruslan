@@ -1,4 +1,3 @@
-# backend/app/api/routes_groups.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -20,7 +19,7 @@ router = APIRouter(prefix="/groups", tags=["groups"])
 @router.get("/", response_model=List[Group])
 def list_groups(
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
 ):
     return db.query(models.Group).all()
 
@@ -42,7 +41,7 @@ def create_group(
 def get_group(
     group_id: int,
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
 ):
     group = db.query(models.Group).get(group_id)
     if not group:
@@ -54,7 +53,7 @@ def get_group(
 def list_group_members(
     group_id: int,
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
 ):
     members = (
         db.query(models.GroupMember)
@@ -103,7 +102,6 @@ def delete_group_member(
     return {"ok": True}
 
 
-
 @router.delete("/{group_id}")
 def delete_group(
     group_id: int,
@@ -114,12 +112,10 @@ def delete_group(
     if not group:
         raise HTTPException(404, "Group not found")
 
-    # Удаляем связанные записи расписания
     db.query(models.ScheduleItem).filter(
         models.ScheduleItem.group_id == group_id
     ).delete()
 
-    # Удаляем группу
     db.delete(group)
     db.commit()
 

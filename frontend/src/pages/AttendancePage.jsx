@@ -1,84 +1,146 @@
-import React from "react";
-
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getAttendance, markAttendance } from "../api/attendance";
+import { getSchedule } from "../api/schedule";
+import { getGroups } from "../api/groups";
+import { getGroupMembers } from "../api/groups"; // <-- используем твой файл
+import "./AttendancePage.css";
 
 export default function AttendancePage() {
-  const [records, setRecords] = useState([]);
-  const [form, setForm] = useState({
-    schedule_item_id: "",
-    cadet_id: "",
-    present: true,
-  });
+  const [groups, setGroups] = useState([]);
+  const [groupId, setGroupId] = useState("");
 
-  async function load() {
-    const data = await getAttendance();
-    setRecords(data);
-  }
+  const [cadets, setCadets] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [attendance, setAttendance] = useState({});
 
   useEffect(() => {
-    load();
+    loadGroups();
   }, []);
 
-  async function submit(e) {
-    e.preventDefault();
-    await markAttendance({
-      schedule_item_id: Number(form.schedule_item_id),
-      cadet_id: Number(form.cadet_id),
-      present: form.present,
+  async function loadGroups() {
+    setGroups(await getGroups());
+  }
+
+  async function loadDataForGroup(id) {
+    if (!id) return;
+
+    // Загружаем кадетов группы
+    const members = await getGroupMembers(id);
+    const cadets = members.map((m) => ({
+      id: m.cadet_id,
+      full_name: m.full_name,
+    }));
+
+    // Загружаем занятия группы
+    const lessons = await getSchedule({ group_id: id });
+
+    // Загружаем посещаемость
+    const records = await getAttendance();
+
+    const map = {};
+
+    cadets.forEach((c) => {
+      map[c.id] = {};
+      lessons.forEach((l) => {
+        const rec = records.find(
+          (r) => r.cadet_id === c.id && r.schedule_item_id === l.id
+        );
+        map[c.id][l.id] = rec ? rec.present : false;
+      });
     });
-    setForm({ schedule_item_id: "", cadet_id: "", present: true });
-    load();
+
+    setCadets(cadets);
+    setLessons(lessons);
+    setAttendance(map);
+  }
+
+  function toggle(cadetId, lessonId) {
+    setAttendance((prev) => ({
+      ...prev,
+      [cadetId]: {
+        ...prev[cadetId],
+        [lessonId]: !prev[cadetId][lessonId],
+      },
+    }));
+  }
+
+  async function save() {
+    for (const cadetId of Object.keys(attendance)) {
+      for (const lessonId of Object.keys(attendance[cadetId])) {
+        await markAttendance({
+          schedule_item_id: Number(lessonId),
+          cadet_id: Number(cadetId),
+          present: attendance[cadetId][lessonId],
+        });
+      }
+    }
+    alert("Посещаемость сохранена");
   }
 
   return (
-    <div>
-      <h2>Посещаемость</h2>
-      <form onSubmit={submit}>
-        <input
-          placeholder="ID занятия"
-          value={form.schedule_item_id}
-          onChange={(e) =>
-            setForm({ ...form, schedule_item_id: e.target.value })
-          }
-        />
-        <input
-          placeholder="ID курсанта"
-          value={form.cadet_id}
-          onChange={(e) => setForm({ ...form, cadet_id: e.target.value })}
-        />
-        <select
-          value={form.present ? "1" : "0"}
-          onChange={(e) =>
-            setForm({ ...form, present: e.target.value === "1" })
-          }
-        >
-          <option value="1">Присутствовал</option>
-          <option value="0">Отсутствовал</option>
-        </select>
-        <button type="submit">Отметить</button>
-      </form>
+    <div className="attendance-container">
+      <h2 className="page-title">Посещаемость по группам</h2>
 
-      <table border="1" cellPadding="4" style={{ marginTop: 20 }}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Занятие</th>
-            <th>Курсант</th>
-            <th>Присутствие</th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((r) => (
-            <tr key={r.id}>
-              <td>{r.id}</td>
-              <td>{r.schedule_item_id}</td>
-              <td>{r.cadet_id}</td>
-              <td>{r.present ? "Да" : "Нет"}</td>
-            </tr>
+      <div className="card">
+        <select
+          value={groupId}
+          onChange={(e) => {
+            const id = e.target.value;
+            setGroupId(id);
+            loadDataForGroup(id);
+          }}
+        >
+          <option value="">Выберите группу</option>
+          {groups.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
           ))}
-        </tbody>
-      </table>
+        </select>
+      </div>
+
+      {groupId && (
+        <div className="card">
+          <h3 className="card-title">Таблица посещаемости</h3>
+
+          <table className="attendance-table">
+            <thead>
+              <tr>
+                <th>Курсант</th>
+                {lessons.map((l) => (
+                  <th key={l.id}>
+                    {l.course_name}
+                    <br />
+                    {new Date(l.start_time).toLocaleDateString()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {cadets.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.full_name}</td>
+
+                  {lessons.map((l) => (
+                    <td key={l.id} className="center">
+                      <input
+                        type="checkbox"
+                        checked={attendance[c.id]?.[l.id] || false}
+                        onChange={() => toggle(c.id, l.id)}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <button className="btn-primary save-btn" onClick={save}>
+            Сохранить посещаемость
+          </button>
+        </div>
+      )}
     </div>
   );
 }

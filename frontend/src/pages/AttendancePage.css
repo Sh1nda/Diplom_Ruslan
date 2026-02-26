@@ -1,0 +1,49 @@
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.attendance-table th,
+.attendance-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.attendance-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f7f7f7;
+  z-index: 2;
+}
+
+.attendance-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.attendance-table tbody tr:hover {
+  background: #f0f7ff;
+}
+
+.attendance-table td:first-child,
+.attendance-table th:first-child {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 3;
+  text-align: left;
+  font-weight: 600;
+}
+
+.center {
+  text-align: center;
+}
+
+.attendance-checkbox {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  transform: scale(1.2);
+}

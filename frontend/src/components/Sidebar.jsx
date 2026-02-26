@@ -15,17 +15,17 @@ export default function Sidebar() {
       {/* Пользователи — только для админа */}
       {role === "ADMIN" && <Link to="/users">Пользователи</Link>}
 
-      {/* Посещаемость — для преподавателя и командира */}
-      {(role === "TEACHER" || role === "COMMANDER") && (
+      {/* Посещаемость — теперь для ADMIN, TEACHER, COMMANDER */}
+      {(role === "ADMIN" || role === "TEACHER" || role === "COMMANDER") && (
         <Link to="/attendance">Посещаемость</Link>
       )}
 
+      {/* Дисциплина — для командира и админа */}
       {(role === "COMMANDER" || role === "ADMIN") && (
-  <Link to="/discipline">Дисциплина</Link>
-)}
+        <Link to="/discipline">Дисциплина</Link>
+      )}
 
-
-      {/* Группы — например, для админа и командира */}
+      {/* Группы — для админа и командира */}
       {(role === "ADMIN" || role === "COMMANDER") && (
         <Link to="/groups">Группы</Link>
       )}

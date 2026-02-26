@@ -12,15 +12,16 @@ import DisciplinePage from "../pages/DisciplinePage";
 import DocumentsPage from "../pages/DocumentsPage";
 import GroupsPage from "../pages/GroupsPage";
 
-
 import ProtectedRoute from "../components/ProtectedRoute";
 import Layout from "../components/Layout";
 
 export default function AppRouter() {
   return (
     <Routes>
+      {/* Логин */}
       <Route path="/login" element={<Login />} />
 
+      {/* Главная */}
       <Route
         path="/"
         element={
@@ -32,6 +33,7 @@ export default function AppRouter() {
         }
       />
 
+      {/* Пользователи — только админ */}
       <Route
         path="/users"
         element={
@@ -43,6 +45,7 @@ export default function AppRouter() {
         }
       />
 
+      {/* Курсы — ADMIN, COMMANDER, TEACHER */}
       <Route
         path="/courses"
         element={
@@ -54,6 +57,7 @@ export default function AppRouter() {
         }
       />
 
+      {/* Расписание — любой авторизованный */}
       <Route
         path="/schedule"
         element={
@@ -65,10 +69,11 @@ export default function AppRouter() {
         }
       />
 
+      {/* Посещаемость — ADMIN, TEACHER, COMMANDER */}
       <Route
         path="/attendance"
         element={
-          <ProtectedRoute roles={["TEACHER", "COMMANDER"]}>
+          <ProtectedRoute roles={["ADMIN", "TEACHER", "COMMANDER"]}>
             <Layout>
               <AttendancePage />
             </Layout>
@@ -76,6 +81,7 @@ export default function AppRouter() {
         }
       />
 
+      {/* Дисциплина — ADMIN, COMMANDER */}
       <Route
         path="/discipline"
         element={
@@ -87,6 +93,7 @@ export default function AppRouter() {
         }
       />
 
+      {/* Документы — любой авторизованный */}
       <Route
         path="/documents"
         element={
@@ -97,17 +104,18 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
-      <Route
-  path="/groups"
-  element={
-    <ProtectedRoute roles={["ADMIN", "COMMANDER"]}>
-      <Layout>
-        <GroupsPage />
-      </Layout>
-    </ProtectedRoute>
-  }
-/>
 
+      {/* Группы — ADMIN, COMMANDER */}
+      <Route
+        path="/groups"
+        element={
+          <ProtectedRoute roles={["ADMIN", "COMMANDER"]}>
+            <Layout>
+              <GroupsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

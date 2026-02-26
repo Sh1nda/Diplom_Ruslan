@@ -1,8 +1,7 @@
-# backend/app/api/routes_users.py
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.api.deps import (
     get_db,
@@ -10,25 +9,18 @@ from app.api.deps import (
     require_role,
 )
 from app.models.user import User, UserRole
+from app.models.group_member import GroupMember
 from app.schemas.user import UserCreate, UserOut, UserUpdate
 from app.core.security import get_password_hash
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-# -----------------------------
-#  ТЕКУЩИЙ ПОЛЬЗОВАТЕЛЬ /users/me
-# -----------------------------
 @router.get("/me", response_model=UserOut)
-def read_users_me(
-    current_user: User = Depends(get_current_user),
-):
+def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-# -----------------------------
-#  СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ
-# -----------------------------
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: UserCreate,
@@ -52,20 +44,27 @@ def create_user(
     return user
 
 
-# -----------------------------
-#  СПИСОК ПОЛЬЗОВАТЕЛЕЙ
-# -----------------------------
 @router.get("/", response_model=List[UserOut])
 def list_users(
+    role: UserRole | None = None,
+    group_id: int | None = None,
     db: Session = Depends(get_db),
-    _: User = Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+    _: User = Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
 ):
-    return db.query(User).all()
+    q = db.query(User)
+
+    if role:
+        q = q.filter(User.role == role)
+
+    if group_id:
+        q = (
+            q.join(GroupMember, GroupMember.cadet_id == User.id)
+             .filter(GroupMember.group_id == group_id)
+        )
+
+    return q.all()
 
 
-# -----------------------------
-#  ПОЛУЧЕНИЕ ПОЛЬЗОВАТЕЛЯ ПО ID
-# -----------------------------
 @router.get("/{user_id}", response_model=UserOut)
 def get_user(
     user_id: int,
@@ -77,6 +76,7 @@ def get_user(
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
 
+
 @router.get("/teachers", response_model=List[UserOut])
 def list_teachers(
     db: Session = Depends(get_db),
@@ -84,9 +84,7 @@ def list_teachers(
 ):
     return db.query(User).filter(User.role == UserRole.TEACHER).all()
 
-# -----------------------------
-#  ОБНОВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ
-# -----------------------------
+
 @router.patch("/{user_id}", response_model=UserOut)
 def update_user(
     user_id: int,

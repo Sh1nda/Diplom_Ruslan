@@ -1,6 +1,5 @@
-# backend/app/schemas/groups.py
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class GroupBase(BaseModel):
@@ -18,6 +17,7 @@ class Group(GroupBase):
 
     class Config:
         orm_mode = True
+        extra = "ignore"   
 
 
 class GroupMemberBase(BaseModel):
@@ -36,7 +36,6 @@ class GroupMember(BaseModel):
 
     class Config:
         orm_mode = True
-
 
 
 class GroupMemberOut(BaseModel):
