@@ -1,92 +1,96 @@
-:root {
-  --primary: #2b2b2b;
-  --primary-light: #4a4a4a;
-  --card-bg: #f2f2f2;
-  --accent: #6a6a6a;
-  --text-dark: #1a1a1a;
-  --text-light: #555;
-}
-
-.docs-container {
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  max-width: 1200px;
+.docs-page {
+  max-width: 900px;
   margin: 0 auto;
+  padding: 24px;
 }
 
 .page-title {
-  margin-bottom: 20px;
-  color: var(--primary);
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 24px;
 }
 
 .card {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: 10px;
-  margin-bottom: 30px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .card-title {
-  margin-bottom: 15px;
   font-size: 20px;
-  font-weight: bold;
-  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 20px;
 }
 
-/* Форма */
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+.form {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-input {
-  padding: 10px;
-  height: 44px;
-  border: 1px solid #bfbfbf;
-  border-radius: 6px;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
   font-size: 14px;
-  background: white;
+  font-weight: 500;
 }
 
-.form-submit {
-  grid-column: 1 / -1;
-  height: 48px;
+input[type="text"],
+input[type="number"],
+textarea,
+input[type="file"] {
+  padding: 10px 12px;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
-/* Кнопки */
+textarea {
+  resize: vertical;
+  min-height: 70px;
+}
 
 .btn-primary {
-  background: var(--primary);
+  padding: 12px;
+  background: #3b82f6;
   color: white;
   border: none;
-  padding: 10px;
-  border-radius: 6px;
-  cursor: pointer;
+  border-radius: 8px;
   font-size: 15px;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
 .btn-primary:hover {
-  background: var(--primary-light);
+  background: #2563eb;
 }
-
-/* Таблица */
 
 .styled-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
 }
 
-.styled-table th {
-  background: #e0e0e0;
-  padding: 10px;
-  text-align: left;
-}
-
+.styled-table th,
 .styled-table td {
-  padding: 8px;
-  border-top: 1px solid #cfcfcf;
+  padding: 12px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
 }
