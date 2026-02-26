@@ -8,6 +8,7 @@ from app import models
 from app.schemas.discipline import DisciplineCreate, DisciplineRecordOut
 from app.models.user import UserRole
 
+# ВАЖНО: router должен быть объявлен ДО использования
 router = APIRouter(prefix="/discipline", tags=["discipline"])
 
 
@@ -31,16 +32,12 @@ def list_discipline(
     return [
         DisciplineRecordOut(
             id=r.id,
-
             group_id=r.group_id,
             group_name=r.group.name,
-
             cadet_id=r.cadet_id,
             cadet_name=r.cadet.full_name,
-
             commander_id=r.commander_id,
-            commander_name=r.commander.full_name,
-
+            commander_name=r.commander.full_name if r.commander else "",
             violation_type=r.violation_type,
             comment=r.comment,
             created_at=r.created_at,
@@ -59,10 +56,9 @@ def create_discipline(
         cadet_id=record_in.cadet_id,
         group_id=record_in.group_id,
         violation_type=record_in.violation_type,
-        description=record_in.description,
-        action_taken=record_in.action_taken,
-        comment=record_in.comment,
-
+        description=record_in.description or None,
+        action_taken=record_in.action_taken or None,
+        comment=record_in.comment or None,
         commander_id=user.id,
         created_by_id=user.id,
     )
@@ -73,16 +69,12 @@ def create_discipline(
 
     return DisciplineRecordOut(
         id=record.id,
-
         group_id=record.group_id,
         group_name=record.group.name,
-
         cadet_id=record.cadet_id,
         cadet_name=record.cadet.full_name,
-
         commander_id=record.commander_id,
-        commander_name=record.commander.full_name,
-
+        commander_name=record.commander.full_name if record.commander else "",
         violation_type=record.violation_type,
         comment=record.comment,
         created_at=record.created_at,

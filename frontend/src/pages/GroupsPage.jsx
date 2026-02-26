@@ -5,6 +5,7 @@ import {
   getGroupMembers,
   addGroupMember,
   deleteGroupMember,
+  deleteGroup,
 } from "../api/groups";
 import api from "../api/axios";
 import "./GroupsPage.css";
@@ -83,6 +84,17 @@ export default function GroupsPage() {
     await loadMembers(selectedGroupId);
   }
 
+  async function removeGroup(id) {
+    await deleteGroup(id);
+
+    if (selectedGroupId === id) {
+      setSelectedGroupId(null);
+      setMembers([]);
+    }
+
+    await loadGroups();
+  }
+
   return (
     <div className="groups-container">
       <h2 className="page-title">Учебные группы</h2>
@@ -139,9 +151,20 @@ export default function GroupsPage() {
                   className={
                     g.id === selectedGroupId ? "group-item active" : "group-item"
                   }
-                  onClick={() => setSelectedGroupId(g.id)}
                 >
-                  {g.name} {g.year && `(${g.year})`}
+                  <span onClick={() => setSelectedGroupId(g.id)}>
+                    {g.name} {g.year && `(${g.year})`}
+                  </span>
+
+                  <button
+                    className="btn-delete small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeGroup(g.id);
+                    }}
+                  >
+                    ×
+                  </button>
                 </li>
               ))}
             </ul>

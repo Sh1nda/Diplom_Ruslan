@@ -1,4 +1,3 @@
-# backend/app/api/routes_schedule.py
 from datetime import datetime
 from typing import List, Optional
 
@@ -8,13 +7,17 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, require_role
 from app.models.user import User, UserRole
 from app.models.schedule import ScheduleItem
-from app.schemas.schedule import ScheduleItemCreate, ScheduleItemOut
+from app.schemas.schedule import (
+    ScheduleItemCreate,
+    ScheduleItemUpdate,
+    ScheduleItemOut,
+)
 
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 
 # -----------------------------
-# Создание пары
+# Создание занятия
 # -----------------------------
 @router.post("/", response_model=ScheduleItemOut)
 def create_schedule_item(
@@ -23,17 +26,9 @@ def create_schedule_item(
     _: User = Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
 ):
     if item_in.start_time >= item_in.end_time:
-        raise HTTPException(status_code=400, detail="Некорректный интервал времени")
+        raise HTTPException(400, "Некорректный интервал времени")
 
-    item = ScheduleItem(
-        course_id=item_in.course_id,
-        teacher_id=item_in.teacher_id,
-        group_id=item_in.group_id,
-        start_time=item_in.start_time,
-        end_time=item_in.end_time,
-        room=item_in.room,
-    )
-
+    item = ScheduleItem(**item_in.dict())
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -50,6 +45,58 @@ def create_schedule_item(
         end_time=item.end_time,
         room=item.room,
     )
+
+
+# -----------------------------
+# Обновление занятия
+# -----------------------------
+@router.put("/{item_id}", response_model=ScheduleItemOut)
+def update_schedule_item(
+    item_id: int,
+    item_in: ScheduleItemUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+):
+    item = db.query(ScheduleItem).get(item_id)
+    if not item:
+        raise HTTPException(404, "Schedule item not found")
+
+    for field, value in item_in.dict().items():
+        setattr(item, field, value)
+
+    db.commit()
+    db.refresh(item)
+
+    return ScheduleItemOut(
+        id=item.id,
+        course_id=item.course_id,
+        course_name=item.course.title,
+        teacher_id=item.teacher_id,
+        teacher_name=item.teacher.full_name,
+        group_id=item.group_id,
+        group_name=item.group.name,
+        start_time=item.start_time,
+        end_time=item.end_time,
+        room=item.room,
+    )
+
+
+# -----------------------------
+# Удаление занятия
+# -----------------------------
+@router.delete("/{item_id}")
+def delete_schedule_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+):
+    item = db.query(ScheduleItem).get(item_id)
+    if not item:
+        raise HTTPException(404, "Schedule item not found")
+
+    db.delete(item)
+    db.commit()
+    return {"ok": True}
 
 
 # -----------------------------
@@ -117,15 +164,17 @@ def weekly_schedule(
         .all()
     )
 
-    # 0–6: Пн–Вс
     week = {i: [] for i in range(7)}
 
     for i in items:
-        weekday = i.start_time.weekday()  # 0 = Понедельник
+        weekday = i.start_time.weekday()
         week[weekday].append({
             "id": i.id,
+            "course_id": i.course_id,
             "course_name": i.course.title,
+            "teacher_id": i.teacher_id,
             "teacher_name": i.teacher.full_name,
+            "group_id": i.group_id,
             "group_name": i.group.name,
             "start_time": i.start_time,
             "end_time": i.end_time,

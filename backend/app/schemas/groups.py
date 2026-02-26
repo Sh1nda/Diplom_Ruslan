@@ -38,7 +38,7 @@ class GroupMember(BaseModel):
         orm_mode = True
 
 
-# 🔥 Новая схема для фронтенда
+
 class GroupMemberOut(BaseModel):
     id: int
     cadet_id: int

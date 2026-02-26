@@ -18,7 +18,6 @@ class ScheduleItem(Base):
     end_time = Column(DateTime, nullable=False)
     room = Column(String(64), nullable=True)
 
-    # связи
     course = relationship("Course")
     teacher = relationship("User")
     group = relationship("Group")

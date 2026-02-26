@@ -50,7 +50,6 @@ def get_group(
     return group
 
 
-# 🔥 Исправленный эндпоинт — теперь возвращает full_name
 @router.get("/{group_id}/members", response_model=List[GroupMemberOut])
 def list_group_members(
     group_id: int,
@@ -101,4 +100,27 @@ def delete_group_member(
         raise HTTPException(404, "Member not found")
     db.delete(member)
     db.commit()
+    return {"ok": True}
+
+
+
+@router.delete("/{group_id}")
+def delete_group(
+    group_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_role(UserRole.ADMIN)),
+):
+    group = db.query(models.Group).get(group_id)
+    if not group:
+        raise HTTPException(404, "Group not found")
+
+    # Удаляем связанные записи расписания
+    db.query(models.ScheduleItem).filter(
+        models.ScheduleItem.group_id == group_id
+    ).delete()
+
+    # Удаляем группу
+    db.delete(group)
+    db.commit()
+
     return {"ok": True}

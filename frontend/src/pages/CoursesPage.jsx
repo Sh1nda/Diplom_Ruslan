@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getCourses, createCourse } from "../api/courses";
+import { getCourses, createCourse, deleteCourse } from "../api/courses";
 import "./CoursesPage.css";
 
 export default function CoursesPage() {
@@ -19,6 +19,11 @@ export default function CoursesPage() {
     e.preventDefault();
     await createCourse(form);
     setForm({ title: "", description: "" });
+    load();
+  }
+
+  async function removeCourse(id) {
+    await deleteCourse(id);
     load();
   }
 
@@ -59,6 +64,7 @@ export default function CoursesPage() {
               <th>ID</th>
               <th>Название</th>
               <th>Описание</th>
+              <th></th>
             </tr>
           </thead>
 
@@ -68,6 +74,14 @@ export default function CoursesPage() {
                 <td>{c.id}</td>
                 <td>{c.title}</td>
                 <td>{c.description}</td>
+                <td>
+                  <button
+                    className="btn-delete"
+                    onClick={() => removeCourse(c.id)}
+                  >
+                    Удалить
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

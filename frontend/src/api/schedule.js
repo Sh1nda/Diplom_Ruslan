@@ -11,7 +11,16 @@ export async function createScheduleItem(data) {
   return res.data;
 }
 
-// 🔥 Добавляем эту функцию
+export async function updateScheduleItem(id, data) {
+  const res = await api.put(`/schedule/${id}`, data);
+  return res.data;
+}
+
+export async function deleteScheduleItem(id) {
+  const res = await api.delete(`/schedule/${id}`);
+  return res.data;
+}
+
 export async function getWeeklySchedule(groupId) {
   const res = await api.get(`/schedule/weekly?group_id=${groupId}`);
   return res.data;

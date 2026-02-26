@@ -7,6 +7,8 @@
   --text-light: #555;
 }
 
+/* Контейнер страницы */
+
 .discipline-container {
   padding: 20px;
   font-family: Arial, sans-serif;
@@ -17,7 +19,11 @@
 .page-title {
   margin-bottom: 20px;
   color: var(--primary);
+  font-size: 24px;
+  font-weight: 600;
 }
+
+/* Карточки */
 
 .card {
   background: var(--card-bg);
@@ -78,10 +84,11 @@ textarea {
   background: var(--primary);
   color: white;
   border: none;
-  padding: 10px;
+  padding: 10px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 15px;
+  justify-self: flex-start;
 }
 
 .btn-primary:hover {
@@ -92,9 +99,10 @@ textarea {
   background: #b32626;
   color: white;
   border: none;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 13px;
 }
 
 .btn-delete:hover {
@@ -109,13 +117,34 @@ textarea {
   font-size: 14px;
 }
 
-.styled-table th {
+.styled-table thead {
   background: #e0e0e0;
-  padding: 10px;
-  text-align: left;
 }
 
+.styled-table th,
 .styled-table td {
-  padding: 8px;
+  padding: 10px;
+  text-align: left;
   border-top: 1px solid #cfcfcf;
+}
+
+.styled-table th {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.styled-table tbody tr:nth-child(even) {
+  background: #f7f7f7;
+}
+
+.styled-table tbody tr:hover {
+  background: #ececec;
+}
+
+/* Гарантируем видимость последнего столбца (кнопка удаления) */
+
+.styled-table th:last-child,
+.styled-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
 }

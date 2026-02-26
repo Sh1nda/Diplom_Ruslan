@@ -17,6 +17,10 @@ class ScheduleItemCreate(ScheduleItemBase):
     pass
 
 
+class ScheduleItemUpdate(ScheduleItemBase):
+    pass
+
+
 class ScheduleItemOut(BaseModel):
     id: int
 

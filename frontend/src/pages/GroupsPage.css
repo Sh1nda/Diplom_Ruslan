@@ -145,3 +145,28 @@ select {
   padding: 8px;
   border-top: 1px solid #cfcfcf;
 }
+.group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.group-item span {
+  flex: 1;
+}
+
+.btn-delete.small {
+  background: #b32626;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-delete.small:hover {
+  background: #8a1e1e;
+}

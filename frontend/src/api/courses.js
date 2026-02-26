@@ -9,3 +9,8 @@ export async function createCourse(payload) {
   const res = await api.post("/courses", payload);
   return res.data;
 }
+
+export async function deleteCourse(id) {
+  const res = await api.delete(`/courses/${id}`);
+  return res.data;
+}

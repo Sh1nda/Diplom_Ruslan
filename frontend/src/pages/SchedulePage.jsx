@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { getSchedule, createScheduleItem, getWeeklySchedule } from "../api/schedule";
+import {
+  getSchedule,
+  createScheduleItem,
+  updateScheduleItem,
+  deleteScheduleItem,
+  getWeeklySchedule,
+} from "../api/schedule";
 import { getGroups } from "../api/groups";
 import { getCourses } from "../api/courses";
 import { getTeachers } from "../api/teachers";
@@ -22,6 +28,8 @@ export default function SchedulePage() {
   const [teachers, setTeachers] = useState([]);
   const [groupId, setGroupId] = useState("");
   const [week, setWeek] = useState(null);
+
+  const [editingId, setEditingId] = useState(null);
 
   const [form, setForm] = useState({
     course_id: "",
@@ -63,14 +71,21 @@ export default function SchedulePage() {
   async function submit(e) {
     e.preventDefault();
 
-    await createScheduleItem({
+    const payload = {
       course_id: Number(form.course_id),
       teacher_id: Number(form.teacher_id),
       group_id: Number(form.group_id),
       start_time: form.start_time,
       end_time: form.end_time,
       room: form.room,
-    });
+    };
+
+    if (editingId) {
+      await updateScheduleItem(editingId, payload);
+      setEditingId(null);
+    } else {
+      await createScheduleItem(payload);
+    }
 
     setForm({
       course_id: "",
@@ -85,54 +100,92 @@ export default function SchedulePage() {
     loadWeek();
   }
 
+  function startEdit(item) {
+    setEditingId(item.id);
+    setForm({
+      course_id: item.course_id,
+      teacher_id: item.teacher_id,
+      group_id: item.group_id,
+      start_time: item.start_time.slice(0, 16),
+      end_time: item.end_time.slice(0, 16),
+      room: item.room || "",
+    });
+  }
+
+  async function removeItem(id) {
+    await deleteScheduleItem(id);
+
+    if (editingId === id) {
+      setEditingId(null);
+      setForm({
+        course_id: "",
+        teacher_id: "",
+        group_id: "",
+        start_time: "",
+        end_time: "",
+        room: "",
+      });
+    }
+
+    load();
+    loadWeek();
+  }
+
   return (
     <div className="schedule-container">
       <h2 className="page-title">Расписание</h2>
 
+      {/* Форма */}
       <div className="card">
-        <h3 className="card-title">Добавить занятие</h3>
+        <h3 className="card-title">
+          {editingId ? "Редактировать занятие" : "Добавить занятие"}
+        </h3>
 
         <form onSubmit={submit} className="form-grid">
-
-          {/* Курс */}
           <select
             value={form.course_id}
             onChange={(e) => setForm({ ...form, course_id: e.target.value })}
           >
             <option value="">Выберите курс</option>
             {courses.map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
             ))}
           </select>
 
-          {/* Преподаватель */}
           <select
             value={form.teacher_id}
             onChange={(e) => setForm({ ...form, teacher_id: e.target.value })}
           >
             <option value="">Выберите преподавателя</option>
             {teachers.map((t) => (
-              <option key={t.id} value={t.id}>{t.full_name}</option>
+              <option key={t.id} value={t.id}>
+                {t.full_name}
+              </option>
             ))}
           </select>
 
-          {/* Группа */}
           <select
             value={form.group_id}
             onChange={(e) => setForm({ ...form, group_id: e.target.value })}
           >
             <option value="">Выберите группу</option>
             {groups.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
             ))}
           </select>
 
-          <input type="datetime-local"
+          <input
+            type="datetime-local"
             value={form.start_time}
             onChange={(e) => setForm({ ...form, start_time: e.target.value })}
           />
 
-          <input type="datetime-local"
+          <input
+            type="datetime-local"
             value={form.end_time}
             onChange={(e) => setForm({ ...form, end_time: e.target.value })}
           />
@@ -144,12 +197,12 @@ export default function SchedulePage() {
           />
 
           <button type="submit" className="btn-primary form-submit">
-            Добавить
+            {editingId ? "Сохранить изменения" : "Добавить"}
           </button>
         </form>
       </div>
 
-      {/* Таблица */}
+      {/* Таблица всех занятий */}
       <div className="card">
         <h3 className="card-title">Все занятия</h3>
 
@@ -163,6 +216,7 @@ export default function SchedulePage() {
               <th>Начало</th>
               <th>Конец</th>
               <th>Аудитория</th>
+              <th></th>
             </tr>
           </thead>
 
@@ -176,6 +230,21 @@ export default function SchedulePage() {
                 <td>{new Date(s.start_time).toLocaleString()}</td>
                 <td>{new Date(s.end_time).toLocaleString()}</td>
                 <td>{s.room}</td>
+                <td>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => startEdit(s)}
+                    style={{ marginRight: 8 }}
+                  >
+                    Редактировать
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={() => removeItem(s.id)}
+                  >
+                    Удалить
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -190,7 +259,9 @@ export default function SchedulePage() {
           <select value={groupId} onChange={(e) => setGroupId(e.target.value)}>
             <option value="">Выберите группу</option>
             {groups.map((g) => (
-              <option key={g.id} value={g.id}>{g.name}</option>
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
             ))}
           </select>
 
@@ -218,6 +289,22 @@ export default function SchedulePage() {
                       {new Date(item.end_time).toLocaleTimeString()}
                     </div>
                     <div className="lesson-room">Ауд.: {item.room}</div>
+
+                    <div className="lesson-actions">
+                      <button
+                        className="btn-secondary small"
+                        onClick={() => startEdit(item)}
+                      >
+                        ✎
+                      </button>
+
+                      <button
+                        className="btn-delete small"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
