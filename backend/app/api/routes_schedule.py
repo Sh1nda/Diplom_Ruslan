@@ -61,7 +61,7 @@ def update_schedule_item(
     if not item:
         raise HTTPException(404, "Schedule item not found")
 
-    for field, value in item_in.dict().items():
+    for field, value in item_in.dict(exclude_unset=True).items():
         setattr(item, field, value)
 
     db.commit()
@@ -100,11 +100,12 @@ def delete_schedule_item(
 
 
 # -----------------------------
-# Список всех занятий
+# Список занятий (с фильтрами)
 # -----------------------------
 @router.get("/", response_model=List[ScheduleItemOut])
 def list_schedule(
     group_id: Optional[int] = None,
+    course_id: Optional[int] = None,   # <-- ДОБАВЛЕНО
     from_time: Optional[datetime] = None,
     to_time: Optional[datetime] = None,
     db: Session = Depends(get_db),
@@ -119,8 +120,13 @@ def list_schedule(
 
     if group_id:
         q = q.filter(ScheduleItem.group_id == group_id)
+
+    if course_id:  # <-- ДОБАВЛЕНО
+        q = q.filter(ScheduleItem.course_id == course_id)
+
     if from_time:
         q = q.filter(ScheduleItem.start_time >= from_time)
+
     if to_time:
         q = q.filter(ScheduleItem.end_time <= to_time)
 

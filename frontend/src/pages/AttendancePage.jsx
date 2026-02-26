@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { getAttendance, markAttendance } from "../api/attendance";
 import { getSchedule } from "../api/schedule";
-import { getGroups } from "../api/groups";
-import { getGroupMembers } from "../api/groups"; // <-- используем твой файл
+import { getGroups, getGroupMembers } from "../api/groups";
+import { getCourses } from "../api/courses";
 import "./AttendancePage.css";
 
 export default function AttendancePage() {
   const [groups, setGroups] = useState([]);
   const [groupId, setGroupId] = useState("");
+
+  const [courses, setCourses] = useState([]);
+  const [courseId, setCourseId] = useState("");
 
   const [cadets, setCadets] = useState([]);
   const [lessons, setLessons] = useState([]);
@@ -31,8 +34,24 @@ export default function AttendancePage() {
       full_name: m.full_name,
     }));
 
-    // Загружаем занятия группы
-    const lessons = await getSchedule({ group_id: id });
+    // Загружаем дисциплины
+    const courses = await getCourses();
+
+    setCadets(cadets);
+    setCourses(courses);
+    setCourseId("");
+    setLessons([]);
+    setAttendance({});
+  }
+
+  async function loadLessonsForCourse(courseId) {
+    if (!courseId) return;
+
+    // Загружаем занятия по группе и дисциплине
+    const lessons = await getSchedule({
+      group_id: groupId,
+      course_id: courseId,
+    });
 
     // Загружаем посещаемость
     const records = await getAttendance();
@@ -49,7 +68,6 @@ export default function AttendancePage() {
       });
     });
 
-    setCadets(cadets);
     setLessons(lessons);
     setAttendance(map);
   }
@@ -79,8 +97,9 @@ export default function AttendancePage() {
 
   return (
     <div className="attendance-container">
-      <h2 className="page-title">Посещаемость по группам</h2>
+      <h2 className="page-title">Посещаемость по дисциплинам</h2>
 
+      {/* Выбор группы */}
       <div className="card">
         <select
           value={groupId}
@@ -99,42 +118,67 @@ export default function AttendancePage() {
         </select>
       </div>
 
+      {/* Выбор дисциплины */}
       {groupId && (
         <div className="card">
-          <h3 className="card-title">Таблица посещаемости</h3>
+          <select
+            value={courseId}
+            onChange={(e) => {
+              const id = Number(e.target.value);
+              setCourseId(id);
+              loadLessonsForCourse(id);
+            }}
+          >
+            <option value="">Выберите дисциплину</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-          <table className="attendance-table">
-            <thead>
-              <tr>
-                <th>Курсант</th>
-                {lessons.map((l) => (
-                  <th key={l.id}>
-                    {l.course_name}
-                    <br />
-                    {new Date(l.start_time).toLocaleDateString()}
-                  </th>
-                ))}
-              </tr>
-            </thead>
+      {/* Таблица */}
+      {courseId && lessons.length > 0 && (
+        <div className="card">
+          <h3 className="card-title">
+            {courses.find((c) => c.id === courseId)?.title}
+          </h3>
 
-            <tbody>
-              {cadets.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.full_name}</td>
-
+          <div className="table-wrapper">
+            <table className="attendance-table">
+              <thead>
+                <tr>
+                  <th className="sticky-col">Курсант</th>
                   {lessons.map((l) => (
-                    <td key={l.id} className="center">
-                      <input
-                        type="checkbox"
-                        checked={attendance[c.id]?.[l.id] || false}
-                        onChange={() => toggle(c.id, l.id)}
-                      />
-                    </td>
+                    <th key={l.id}>
+                      {new Date(l.start_time).toLocaleDateString()}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {cadets.map((c) => (
+                  <tr key={c.id}>
+                    <td className="sticky-col">{c.full_name}</td>
+
+                    {lessons.map((l) => (
+                      <td key={l.id} className="center">
+                        <input
+                          type="checkbox"
+                          className="attendance-checkbox"
+                          checked={attendance[c.id]?.[l.id] || false}
+                          onChange={() => toggle(c.id, l.id)}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <button className="btn-primary save-btn" onClick={save}>
             Сохранить посещаемость

@@ -6,13 +6,26 @@ export async function getSchedule(params) {
   return res.data;
 }
 
+function normalizePayload(data) {
+  return {
+    course_id: Number(data.course_id),
+    teacher_id: Number(data.teacher_id),
+    group_id: Number(data.group_id),
+    start_time: new Date(data.start_time).toISOString(),
+    end_time: new Date(data.end_time).toISOString(),
+    room: data.room || null,
+  };
+}
+
 export async function createScheduleItem(data) {
-  const res = await api.post("/schedule", data);
+  const payload = normalizePayload(data);
+  const res = await api.post("/schedule", payload);
   return res.data;
 }
 
 export async function updateScheduleItem(id, data) {
-  const res = await api.put(`/schedule/${id}`, data);
+  const payload = normalizePayload(data);
+  const res = await api.put(`/schedule/${id}`, payload);
   return res.data;
 }
 
