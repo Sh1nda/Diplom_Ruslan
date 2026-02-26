@@ -1,3 +1,4 @@
+# backend/app/schemas/discipline.py
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -16,9 +17,20 @@ class DisciplineCreate(DisciplineBase):
     pass
 
 
-class DisciplineRecordOut(DisciplineBase):
+class DisciplineRecordOut(BaseModel):
     id: int
-    created_by_id: int
+
+    group_id: int
+    group_name: str
+
+    cadet_id: int
+    cadet_name: str
+
+    commander_id: int
+    commander_name: str
+
+    violation_type: str
+    comment: Optional[str]
     created_at: datetime
 
     class Config:

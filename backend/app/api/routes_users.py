@@ -77,6 +77,12 @@ def get_user(
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return user
 
+@router.get("/teachers", response_model=List[UserOut])
+def list_teachers(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
+):
+    return db.query(User).filter(User.role == UserRole.TEACHER).all()
 
 # -----------------------------
 #  ОБНОВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ

@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { getGroups, createGroup, getGroupMembers, addGroupMember, deleteGroupMember } from "../api/groups";
+import {
+  getGroups,
+  createGroup,
+  getGroupMembers,
+  addGroupMember,
+  deleteGroupMember,
+} from "../api/groups";
 import api from "../api/axios";
+import "./GroupsPage.css";
 
 export default function GroupsPage() {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [members, setMembers] = useState([]);
   const [cadets, setCadets] = useState([]);
+  const [commanders, setCommanders] = useState([]);
 
   const [name, setName] = useState("");
   const [year, setYear] = useState("");
@@ -17,6 +25,7 @@ export default function GroupsPage() {
   useEffect(() => {
     loadGroups();
     loadCadets();
+    loadCommanders();
   }, []);
 
   useEffect(() => {
@@ -35,6 +44,11 @@ export default function GroupsPage() {
   async function loadCadets() {
     const res = await api.get("/users", { params: { role: "CADET" } });
     setCadets(res.data);
+  }
+
+  async function loadCommanders() {
+    const res = await api.get("/users", { params: { role: "COMMANDER" } });
+    setCommanders(res.data);
   }
 
   async function loadMembers(groupId) {
@@ -70,99 +84,128 @@ export default function GroupsPage() {
   }
 
   return (
-    <div>
-      <h2>Учебные группы</h2>
+    <div className="groups-container">
+      <h2 className="page-title">Учебные группы</h2>
 
-      <div style={{ display: "flex", gap: 40 }}>
-        <div style={{ flex: 1 }}>
-          <h3>Создать группу</h3>
-          <form onSubmit={submitGroup}>
-            <div>
-              <label>Название</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div>
-              <label>Год набора</label>
-              <input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-              />
-            </div>
-            <div>
-              <label>ID командира (опционально)</label>
-              <input
-                type="number"
-                value={commanderId}
-                onChange={(e) => setCommanderId(e.target.value)}
-              />
-            </div>
-            <button type="submit">Создать</button>
-          </form>
+      <div className="groups-layout">
+        {/* Левая колонка */}
+        <div className="left-column">
+          <div className="card">
+            <h3 className="card-title">Создать группу</h3>
 
-          <h3 style={{ marginTop: 30 }}>Список групп</h3>
-          <ul>
-            {groups.map((g) => (
-              <li
-                key={g.id}
-                style={{
-                  cursor: "pointer",
-                  fontWeight: g.id === selectedGroupId ? "bold" : "normal",
-                }}
-                onClick={() => setSelectedGroupId(g.id)}
-              >
-                #{g.id} {g.name} {g.year && `(${g.year})`}
-              </li>
-            ))}
-          </ul>
+            <form onSubmit={submitGroup} className="form-grid">
+              <div className="form-field">
+                <label>Название</label>
+                <input value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+
+              <div className="form-field">
+                <label>Год набора</label>
+                <input
+                  type="number"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Командир (опционально)</label>
+                <select
+                  value={commanderId}
+                  onChange={(e) => setCommanderId(e.target.value)}
+                >
+                  <option value="">Без командира</option>
+                  {commanders.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="submit" className="btn-primary form-submit">
+                Создать
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h3 className="card-title">Список групп</h3>
+
+            <ul className="group-list">
+              {groups.map((g) => (
+                <li
+                  key={g.id}
+                  className={
+                    g.id === selectedGroupId ? "group-item active" : "group-item"
+                  }
+                  onClick={() => setSelectedGroupId(g.id)}
+                >
+                  {g.name} {g.year && `(${g.year})`}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        <div style={{ flex: 1 }}>
-          <h3>Состав группы</h3>
-          {selectedGroupId ? (
-            <>
-              <form onSubmit={submitAddMember}>
-                <div>
-                  <label>Добавить кадета</label>
-                  <select
-                    value={newCadetId}
-                    onChange={(e) => setNewCadetId(e.target.value)}
-                  >
-                    <option value="">Выберите кадета</option>
-                    {cadets.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        #{c.id} {c.username}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="submit">Добавить</button>
-                </div>
-              </form>
+        {/* Правая колонка */}
+        <div className="right-column">
+          <div className="card">
+            <h3 className="card-title">Состав группы</h3>
 
-              <table style={{ marginTop: 20, width: "100%" }}>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Кадет</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((m) => (
-                    <tr key={m.id}>
-                      <td>{m.cadet_id}</td>
-                      <td>{m.cadet_id}</td>
-                      <td>
-                        <button onClick={() => removeMember(m.id)}>Удалить</button>
-                      </td>
+            {selectedGroupId ? (
+              <>
+                <form onSubmit={submitAddMember} className="form-grid">
+                  <div className="form-field">
+                    <label>Добавить кадета</label>
+                    <select
+                      value={newCadetId}
+                      onChange={(e) => setNewCadetId(e.target.value)}
+                    >
+                      <option value="">Выберите кадета</option>
+                      {cadets.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.full_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button type="submit" className="btn-primary form-submit">
+                    Добавить
+                  </button>
+                </form>
+
+                <table className="styled-table" style={{ marginTop: 20 }}>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Кадет</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          ) : (
-            <p>Выберите группу слева</p>
-          )}
+                  </thead>
+                  <tbody>
+                    {members.map((m) => (
+                      <tr key={m.id}>
+                        <td>{m.cadet_id}</td>
+                        <td>{m.full_name}</td>
+                        <td>
+                          <button
+                            className="btn-delete"
+                            onClick={() => removeMember(m.id)}
+                          >
+                            Удалить
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <p>Выберите группу слева</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

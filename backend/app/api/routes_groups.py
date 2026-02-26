@@ -1,3 +1,4 @@
+# backend/app/api/routes_groups.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -5,7 +6,13 @@ from typing import List
 from app.api.deps import get_db, require_role
 from app.models.user import UserRole
 from app import models
-from app.schemas.groups import Group, GroupCreate, GroupMember, GroupMemberCreate
+from app.schemas.groups import (
+    Group,
+    GroupCreate,
+    GroupMember,
+    GroupMemberCreate,
+    GroupMemberOut,
+)
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -43,17 +50,27 @@ def get_group(
     return group
 
 
-@router.get("/{group_id}/members", response_model=List[GroupMember])
+# 🔥 Исправленный эндпоинт — теперь возвращает full_name
+@router.get("/{group_id}/members", response_model=List[GroupMemberOut])
 def list_group_members(
     group_id: int,
     db: Session = Depends(get_db),
     user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
 ):
-    return (
+    members = (
         db.query(models.GroupMember)
         .filter(models.GroupMember.group_id == group_id)
         .all()
     )
+
+    return [
+        GroupMemberOut(
+            id=m.id,
+            cadet_id=m.cadet_id,
+            full_name=m.cadet.full_name,
+        )
+        for m in members
+    ]
 
 
 @router.post("/{group_id}/members", response_model=GroupMember)

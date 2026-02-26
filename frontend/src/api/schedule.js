@@ -1,11 +1,18 @@
+// src/api/schedule.js
 import api from "./axios";
 
-export async function getSchedule(params = {}) {
+export async function getSchedule(params) {
   const res = await api.get("/schedule", { params });
   return res.data;
 }
 
-export async function createScheduleItem(payload) {
-  const res = await api.post("/schedule", payload);
+export async function createScheduleItem(data) {
+  const res = await api.post("/schedule", data);
+  return res.data;
+}
+
+// 🔥 Добавляем эту функцию
+export async function getWeeklySchedule(groupId) {
+  const res = await api.get(`/schedule/weekly?group_id=${groupId}`);
   return res.data;
 }

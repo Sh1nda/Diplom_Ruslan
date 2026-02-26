@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getGroups } from "../api/groups";
 import { getDiscipline, createDiscipline, deleteDiscipline } from "../api/discipline";
 import api from "../api/axios";
+import "./DisciplinePage.css";
 
 export default function DisciplinePage() {
   const [groups, setGroups] = useState([]);
@@ -33,8 +34,7 @@ export default function DisciplinePage() {
   }
 
   async function loadCadets(groupId) {
-    const res = await api.get("/groups/" + groupId + "/members");
-    // тут можно запросить подробные данные по кадетам, если нужно
+    const res = await api.get(`/groups/${groupId}/members`);
     setCadets(res.data);
   }
 
@@ -65,92 +65,105 @@ export default function DisciplinePage() {
   }
 
   return (
-    <div>
-      <h2>Дисциплина</h2>
+    <div className="discipline-container">
+      <h2 className="page-title">Дисциплина</h2>
 
-      <form onSubmit={submitRecord} style={{ marginBottom: 20 }}>
-        <div>
-          <label>Группа</label>
-          <select
-            value={groupId}
-            onChange={(e) => {
-              setGroupId(e.target.value);
-              setCadetId("");
-            }}
-          >
-            <option value="">Выберите группу</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                #{g.id} {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Форма */}
+      <div className="card">
+        <h3 className="card-title">Добавить запись</h3>
 
-        <div>
-          <label>Кадет</label>
-          <select
-            value={cadetId}
-            onChange={(e) => setCadetId(e.target.value)}
-            disabled={!groupId}
-          >
-            <option value="">Выберите кадета</option>
-            {cadets.map((m) => (
-              <option key={m.id} value={m.cadet_id}>
-                #{m.cadet_id}
-              </option>
-            ))}
-          </select>
-        </div>
+        <form onSubmit={submitRecord} className="form-grid">
 
-        <div>
-          <label>Тип нарушения</label>
-          <input
-            value={violationType}
-            onChange={(e) => setViolationType(e.target.value)}
-          />
-        </div>
+          <div className="form-field">
+            <label>Группа</label>
+            <select
+              value={groupId}
+              onChange={(e) => {
+                setGroupId(e.target.value);
+                setCadetId("");
+              }}
+            >
+              <option value="">Выберите группу</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          <label>Комментарий</label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-          />
-        </div>
+          <div className="form-field">
+            <label>Кадет</label>
+            <select
+              value={cadetId}
+              onChange={(e) => setCadetId(e.target.value)}
+              disabled={!groupId}
+            >
+              <option value="">Выберите кадета</option>
+              {cadets.map((m) => (
+                <option key={m.id} value={m.cadet_id}>{m.full_name}</option>
+              ))}
+            </select>
+          </div>
 
-        <button type="submit">Добавить запись</button>
-      </form>
+          <div className="form-field">
+            <label>Тип нарушения</label>
+            <input
+              value={violationType}
+              onChange={(e) => setViolationType(e.target.value)}
+            />
+          </div>
 
-      <h3>Журнал дисциплины</h3>
-      <table style={{ width: "100%" }}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Группа</th>
-            <th>Кадет</th>
-            <th>Тип</th>
-            <th>Комментарий</th>
-            <th>Дата</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((r) => (
-            <tr key={r.id}>
-              <td>{r.id}</td>
-              <td>{r.group_id}</td>
-              <td>{r.cadet_id}</td>
-              <td>{r.violation_type}</td>
-              <td>{r.comment}</td>
-              <td>{new Date(r.created_at).toLocaleString()}</td>
-              <td>
-                <button onClick={() => removeRecord(r.id)}>Удалить</button>
-              </td>
+          <div className="form-field form-textarea">
+            <label>Комментарий</label>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+            />
+          </div>
+
+          <button type="submit" className="btn-primary form-submit">
+            Добавить запись
+          </button>
+        </form>
+      </div>
+
+      {/* Таблица */}
+      <div className="card">
+        <h3 className="card-title">Журнал дисциплины</h3>
+
+        <table className="styled-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Группа</th>
+              <th>Кадет</th>
+              <th>Командир</th>
+              <th>Тип</th>
+              <th>Комментарий</th>
+              <th>Дата</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {records.map((r) => (
+              <tr key={r.id}>
+                <td>{r.id}</td>
+                <td>{r.group_name}</td>
+                <td>{r.cadet_name}</td>
+                <td>{r.commander_name}</td>
+                <td>{r.violation_type}</td>
+                <td>{r.comment}</td>
+                <td>{new Date(r.created_at).toLocaleString()}</td>
+                <td>
+                  <button className="btn-delete" onClick={() => removeRecord(r.id)}>
+                    Удалить
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

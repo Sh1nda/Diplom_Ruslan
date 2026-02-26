@@ -1,8 +1,9 @@
+# backend/app/api/routes_discipline.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.api.deps import get_db, get_current_user, require_role
+from app.api.deps import get_db, require_role
 from app import models
 from app.schemas.discipline import DisciplineCreate, DisciplineRecordOut
 from app.models.user import UserRole
@@ -25,7 +26,27 @@ def list_discipline(
     if cadet_id:
         q = q.filter(models.DisciplineRecord.cadet_id == cadet_id)
 
-    return q.order_by(models.DisciplineRecord.created_at.desc()).all()
+    records = q.order_by(models.DisciplineRecord.created_at.desc()).all()
+
+    return [
+        DisciplineRecordOut(
+            id=r.id,
+
+            group_id=r.group_id,
+            group_name=r.group.name,
+
+            cadet_id=r.cadet_id,
+            cadet_name=r.cadet.full_name,
+
+            commander_id=r.commander_id,
+            commander_name=r.commander.full_name,
+
+            violation_type=r.violation_type,
+            comment=r.comment,
+            created_at=r.created_at,
+        )
+        for r in records
+    ]
 
 
 @router.post("/", response_model=DisciplineRecordOut)
@@ -34,7 +55,6 @@ def create_discipline(
     db: Session = Depends(get_db),
     user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
 ):
-    # Формируем запись вручную, чтобы гарантировать корректные обязательные поля
     record = models.DisciplineRecord(
         cadet_id=record_in.cadet_id,
         group_id=record_in.group_id,
@@ -43,7 +63,6 @@ def create_discipline(
         action_taken=record_in.action_taken,
         comment=record_in.comment,
 
-        # обязательные поля, которых нет во входной схеме
         commander_id=user.id,
         created_by_id=user.id,
     )
@@ -51,7 +70,23 @@ def create_discipline(
     db.add(record)
     db.commit()
     db.refresh(record)
-    return record
+
+    return DisciplineRecordOut(
+        id=record.id,
+
+        group_id=record.group_id,
+        group_name=record.group.name,
+
+        cadet_id=record.cadet_id,
+        cadet_name=record.cadet.full_name,
+
+        commander_id=record.commander_id,
+        commander_name=record.commander.full_name,
+
+        violation_type=record.violation_type,
+        comment=record.comment,
+        created_at=record.created_at,
+    )
 
 
 @router.delete("/{record_id}")
