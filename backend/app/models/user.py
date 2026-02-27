@@ -1,6 +1,6 @@
-# backend/app/models/user.py
 from sqlalchemy import Boolean, Column, Enum, Integer, String
 import enum
+from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 
@@ -12,8 +12,6 @@ class UserRole(str, enum.Enum):
     CADET = "CADET"
 
 
-from sqlalchemy.orm import relationship
-
 class User(Base):
     __tablename__ = "users"
 
@@ -24,6 +22,12 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.CADET)
     is_active = Column(Boolean, default=True)
 
-    # группы, которыми командует этот пользователь
+    # группы, которыми командует
     groups_commanded = relationship("Group", back_populates="commander")
 
+    # группы, в которых состоит кадет (many-to-many)
+    groups = relationship(
+        "Group",
+        secondary="group_members",
+        back_populates="members"
+    )

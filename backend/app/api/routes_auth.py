@@ -9,6 +9,7 @@ from app.api.deps import authenticate_user, get_db
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.schemas.auth import Token
+from app.schemas.user import UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -26,11 +27,13 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # ВАЖНО: кладём в токен ID, а не username
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         subject=str(user.id),
         expires_delta=access_token_expires,
     )
 
-    return Token(access_token=access_token)
+    return Token(
+        access_token=access_token,
+        user=UserOut.from_orm(user)
+    )

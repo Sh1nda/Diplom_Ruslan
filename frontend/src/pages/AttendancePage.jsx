@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { getAttendance, markAttendance } from "../api/attendance";
+import { getAttendance } from "../api/attendance";
 import { getSchedule } from "../api/schedule";
 import { getGroups, getGroupMembers } from "../api/groups";
 import { getCourses } from "../api/courses";
+import { useAuth } from "../hooks/useAuth";
 import "./AttendancePage.css";
 
 export default function AttendancePage() {
+  const { role, user } = useAuth();
+  const isCadet = role === "CADET";
+
   const [groups, setGroups] = useState([]);
   const [groupId, setGroupId] = useState("");
 
@@ -21,20 +25,30 @@ export default function AttendancePage() {
   }, []);
 
   async function loadGroups() {
-    setGroups(await getGroups());
+    const all = await getGroups();
+
+    if (isCadet) {
+      // Находим группу кадета
+      const group = all.find((g) => g.id === user.group_id);
+      if (group) {
+        setGroups([group]);
+        setGroupId(group.id);
+        loadDataForGroup(group.id);
+      }
+    } else {
+      setGroups(all);
+    }
   }
 
   async function loadDataForGroup(id) {
     if (!id) return;
 
-    // Загружаем кадетов группы
     const members = await getGroupMembers(id);
     const cadets = members.map((m) => ({
       id: m.cadet_id,
       full_name: m.full_name,
     }));
 
-    // Загружаем дисциплины
     const courses = await getCourses();
 
     setCadets(cadets);
@@ -47,13 +61,11 @@ export default function AttendancePage() {
   async function loadLessonsForCourse(courseId) {
     if (!courseId) return;
 
-    // Загружаем занятия по группе и дисциплине
     const lessons = await getSchedule({
       group_id: groupId,
       course_id: courseId,
     });
 
-    // Загружаем посещаемость
     const records = await getAttendance();
 
     const map = {};
@@ -73,6 +85,8 @@ export default function AttendancePage() {
   }
 
   function toggle(cadetId, lessonId) {
+    if (isCadet) return; // Кадет не может менять
+
     setAttendance((prev) => ({
       ...prev,
       [cadetId]: {
@@ -83,6 +97,8 @@ export default function AttendancePage() {
   }
 
   async function save() {
+    if (isCadet) return; // Кадет не может сохранять
+
     for (const cadetId of Object.keys(attendance)) {
       for (const lessonId of Object.keys(attendance[cadetId])) {
         await markAttendance({
@@ -99,24 +115,35 @@ export default function AttendancePage() {
     <div className="attendance-container">
       <h2 className="page-title">Посещаемость по дисциплинам</h2>
 
-      {/* Выбор группы */}
-      <div className="card">
-        <select
-          value={groupId}
-          onChange={(e) => {
-            const id = e.target.value;
-            setGroupId(id);
-            loadDataForGroup(id);
-          }}
-        >
-          <option value="">Выберите группу</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Выбор группы — скрыт для кадета */}
+      {!isCadet && (
+        <div className="card">
+          <select
+            value={groupId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setGroupId(id);
+              loadDataForGroup(id);
+            }}
+          >
+            <option value="">Выберите группу</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Для кадета группа уже выбрана автоматически */}
+      {isCadet && groupId && (
+        <div className="card">
+          <div className="readonly-info">
+            Группа: <b>{groups[0]?.name}</b>
+          </div>
+        </div>
+      )}
 
       {/* Выбор дисциплины */}
       {groupId && (
@@ -171,6 +198,7 @@ export default function AttendancePage() {
                           className="attendance-checkbox"
                           checked={attendance[c.id]?.[l.id] || false}
                           onChange={() => toggle(c.id, l.id)}
+                          disabled={isCadet} // Кадет не может менять
                         />
                       </td>
                     ))}
@@ -180,9 +208,12 @@ export default function AttendancePage() {
             </table>
           </div>
 
-          <button className="btn-primary save-btn" onClick={save}>
-            Сохранить посещаемость
-          </button>
+          {/* Кнопка сохранения — скрыта для кадета */}
+          {!isCadet && (
+            <button className="btn-primary save-btn" onClick={save}>
+              Сохранить посещаемость
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -11,5 +11,5 @@ class GroupMember(Base):
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=False)
     cadet_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-    group = relationship("Group", back_populates="members")
+    group = relationship("Group")
     cadet = relationship("User")

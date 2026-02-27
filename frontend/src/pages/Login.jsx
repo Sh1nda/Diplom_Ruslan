@@ -10,23 +10,26 @@ export default function Login() {
 
   async function submit(e) {
     e.preventDefault();
+
     try {
-      // 1. Получаем токен
+      // 1. Получаем строку токена
       const token = await apiLogin(username, password);
 
-      // 2. Сохраняем токен
-      login(token, null);
+      if (!token) {
+        alert("Ошибка: сервер не вернул токен");
+        return;
+      }
 
-      // 3. Ждём, чтобы localStorage обновился
-      await new Promise((r) => setTimeout(r, 50));
+      // 2. Сохраняем токен (роль пока не знаем)
+      login(token);
 
-      // 4. Получаем роль
+      // 3. Получаем данные пользователя
       const me = await api.get("/users/me");
 
-      // 5. Сохраняем роль
+      // 4. Сохраняем роль
       login(token, me.data.role);
 
-      // 6. Переход
+      // 5. Переход
       window.location.href = "/";
     } catch (err) {
       console.error(err);

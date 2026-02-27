@@ -17,8 +17,37 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserOut)
-def read_users_me(current_user: User = Depends(get_current_user)):
-    return current_user
+def read_users_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Если у User есть прямое поле group_id
+    if hasattr(current_user, "group_id"):
+        return UserOut(
+            id=current_user.id,
+            username=current_user.username,
+            full_name=current_user.full_name,
+            role=current_user.role,
+            is_active=current_user.is_active,
+            group_id=current_user.group_id,
+        )
+
+    # Если связь many-to-many через GroupMember
+    gm = (
+        db.query(GroupMember)
+        .filter(GroupMember.cadet_id == current_user.id)
+        .first()
+    )
+
+    return UserOut(
+        id=current_user.id,
+        username=current_user.username,
+        full_name=current_user.full_name,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        group_id=gm.group_id if gm else None,
+    )
+
 
 
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)

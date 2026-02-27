@@ -21,7 +21,7 @@ export default function AppRouter() {
       {/* Логин */}
       <Route path="/login" element={<Login />} />
 
-      {/* Главная */}
+      {/* Главная — любой авторизованный */}
       <Route
         path="/"
         element={
@@ -45,11 +45,11 @@ export default function AppRouter() {
         }
       />
 
-      {/* Курсы — ADMIN, COMMANDER, TEACHER */}
+      {/* Курсы — ADMIN, COMMANDER, TEACHER, CADET */}
       <Route
         path="/courses"
         element={
-          <ProtectedRoute roles={["ADMIN", "COMMANDER", "TEACHER"]}>
+          <ProtectedRoute roles={["ADMIN", "COMMANDER", "TEACHER", "CADET"]}>
             <Layout>
               <CoursesPage />
             </Layout>
@@ -69,11 +69,11 @@ export default function AppRouter() {
         }
       />
 
-      {/* Посещаемость — ADMIN, TEACHER, COMMANDER */}
+      {/* Посещаемость — теперь доступна и кадету (только просмотр) */}
       <Route
         path="/attendance"
         element={
-          <ProtectedRoute roles={["ADMIN", "TEACHER", "COMMANDER"]}>
+          <ProtectedRoute roles={["ADMIN", "TEACHER", "COMMANDER", "CADET"]}>
             <Layout>
               <AttendancePage />
             </Layout>
@@ -81,11 +81,11 @@ export default function AppRouter() {
         }
       />
 
-      {/* Дисциплина — ADMIN, COMMANDER */}
+      {/* Дисциплина — ADMIN, COMMANDER, CADET */}
       <Route
         path="/discipline"
         element={
-          <ProtectedRoute roles={["COMMANDER", "ADMIN"]}>
+          <ProtectedRoute roles={["COMMANDER", "ADMIN", "CADET"]}>
             <Layout>
               <DisciplinePage />
             </Layout>

@@ -16,9 +16,9 @@ from app.schemas.schedule import (
 router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # Создание занятия
-# -----------------------------
+# ---------------------------------------------------------
 @router.post("/", response_model=ScheduleItemOut)
 def create_schedule_item(
     item_in: ScheduleItemCreate,
@@ -47,9 +47,9 @@ def create_schedule_item(
     )
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # Обновление занятия
-# -----------------------------
+# ---------------------------------------------------------
 @router.put("/{item_id}", response_model=ScheduleItemOut)
 def update_schedule_item(
     item_id: int,
@@ -81,9 +81,9 @@ def update_schedule_item(
     )
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # Удаление занятия
-# -----------------------------
+# ---------------------------------------------------------
 @router.delete("/{item_id}")
 def delete_schedule_item(
     item_id: int,
@@ -99,13 +99,13 @@ def delete_schedule_item(
     return {"ok": True}
 
 
-# -----------------------------
+# ---------------------------------------------------------
 # Список занятий (с фильтрами)
-# -----------------------------
+# ---------------------------------------------------------
 @router.get("/", response_model=List[ScheduleItemOut])
 def list_schedule(
     group_id: Optional[int] = None,
-    course_id: Optional[int] = None,   # <-- ДОБАВЛЕНО
+    course_id: Optional[int] = None,
     from_time: Optional[datetime] = None,
     to_time: Optional[datetime] = None,
     db: Session = Depends(get_db),
@@ -121,7 +121,7 @@ def list_schedule(
     if group_id:
         q = q.filter(ScheduleItem.group_id == group_id)
 
-    if course_id:  # <-- ДОБАВЛЕНО
+    if course_id:
         q = q.filter(ScheduleItem.course_id == course_id)
 
     if from_time:
@@ -149,9 +149,9 @@ def list_schedule(
     ]
 
 
-# -----------------------------
-# Недельное расписание
-# -----------------------------
+# ---------------------------------------------------------
+# Недельное расписание (исправлено!)
+# ---------------------------------------------------------
 @router.get("/weekly")
 def weekly_schedule(
     group_id: int,
@@ -170,7 +170,8 @@ def weekly_schedule(
         .all()
     )
 
-    week = {i: [] for i in range(7)}
+    # ВАЖНО: возвращаем МАССИВ, а не словарь
+    week = [[] for _ in range(7)]
 
     for i in items:
         weekday = i.start_time.weekday()

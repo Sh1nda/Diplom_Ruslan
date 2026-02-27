@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { getGroups } from "../api/groups";
 import { getDiscipline, createDiscipline, deleteDiscipline } from "../api/discipline";
+import { useAuth } from "../hooks/useAuth";
 import api from "../api/axios";
 import "./DisciplinePage.css";
 
 export default function DisciplinePage() {
+  const { role, user } = useAuth();
+  const isCadet = role === "CADET";
+
   const [groups, setGroups] = useState([]);
   const [cadets, setCadets] = useState([]);
   const [records, setRecords] = useState([]);
@@ -14,11 +18,19 @@ export default function DisciplinePage() {
   const [violationType, setViolationType] = useState("");
   const [comment, setComment] = useState("");
 
+  // Загружаем группы (кадету тоже нужно)
   useEffect(() => {
     loadGroups();
   }, []);
 
+  // Логика загрузки записей
   useEffect(() => {
+    if (isCadet) {
+      // Кадет видит только свои записи
+      loadRecords({ cadet_id: user.id });
+      return;
+    }
+
     if (groupId) {
       loadCadets(groupId);
       loadRecords({ group_id: groupId });
@@ -26,7 +38,7 @@ export default function DisciplinePage() {
       setCadets([]);
       setRecords([]);
     }
-  }, [groupId]);
+  }, [groupId, isCadet, user]);
 
   async function loadGroups() {
     const data = await getGroups();
@@ -45,6 +57,8 @@ export default function DisciplinePage() {
 
   async function submitRecord(e) {
     e.preventDefault();
+    if (isCadet) return;
+
     if (!groupId || !cadetId || !violationType) return;
 
     await createDiscipline({
@@ -56,75 +70,89 @@ export default function DisciplinePage() {
 
     setViolationType("");
     setComment("");
-    await loadRecords({ group_id: groupId });
+
+    if (isCadet) {
+      loadRecords({ cadet_id: user.id });
+    } else {
+      loadRecords({ group_id: groupId });
+    }
   }
 
   async function removeRecord(id) {
+    if (isCadet) return;
+
     await deleteDiscipline(id);
-    await loadRecords({ group_id: groupId });
+
+    if (isCadet) {
+      loadRecords({ cadet_id: user.id });
+    } else {
+      loadRecords({ group_id: groupId });
+    }
   }
 
   return (
     <div className="discipline-container">
       <h2 className="page-title">Дисциплина</h2>
 
-      {/* Форма */}
-      <div className="card">
-        <h3 className="card-title">Добавить запись</h3>
+      {/* Форма — скрыта для кадета */}
+      {!isCadet && (
+        <div className="card">
+          <h3 className="card-title">Добавить запись</h3>
 
-        <form onSubmit={submitRecord} className="form-grid">
+          <form onSubmit={submitRecord} className="form-grid">
 
-          <div className="form-field">
-            <label>Группа</label>
-            <select
-              value={groupId}
-              onChange={(e) => {
-                setGroupId(e.target.value);
-                setCadetId("");
-              }}
-            >
-              <option value="">Выберите группу</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-          </div>
+            <div className="form-field">
+              <label>Группа</label>
+              <select
+                value={groupId}
+                onChange={(e) => {
+                  setGroupId(e.target.value);
+                  setCadetId("");
+                }}
+              >
+                <option value="">Выберите группу</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="form-field">
-            <label>Кадет</label>
-            <select
-              value={cadetId}
-              onChange={(e) => setCadetId(e.target.value)}
-              disabled={!groupId}
-            >
-              <option value="">Выберите кадета</option>
-              {cadets.map((m) => (
-                <option key={m.id} value={m.cadet_id}>{m.full_name}</option>
-              ))}
-            </select>
-          </div>
+            <div className="form-field">
+              <label>Кадет</label>
+              <select
+                value={cadetId}
+                onChange={(e) => setCadetId(e.target.value)}
+                disabled={!groupId}
+              >
+                <option value="">Выберите кадета</option>
+                {cadets.map((m) => (
+                  <option key={m.id} value={m.cadet_id}>{m.full_name}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="form-field">
-            <label>Тип нарушения</label>
-            <input
-              value={violationType}
-              onChange={(e) => setViolationType(e.target.value)}
-            />
-          </div>
+            <div className="form-field">
+              <label>Тип нарушения</label>
+              <input
+                value={violationType}
+                onChange={(e) => setViolationType(e.target.value)}
+              />
+            </div>
 
-          <div className="form-field form-textarea">
-            <label>Комментарий</label>
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-          </div>
+            <div className="form-field form-textarea">
+              <label>Комментарий</label>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              />
+            </div>
 
-          <button type="submit" className="btn-primary form-submit">
-            Добавить запись
-          </button>
-        </form>
-      </div>
+            <button type="submit" className="btn-primary form-submit">
+              Добавить запись
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Таблица */}
       <div className="card">
@@ -140,7 +168,7 @@ export default function DisciplinePage() {
               <th>Тип</th>
               <th>Комментарий</th>
               <th>Дата</th>
-              <th></th>
+              {!isCadet && <th></th>}
             </tr>
           </thead>
 
@@ -154,11 +182,14 @@ export default function DisciplinePage() {
                 <td>{r.violation_type}</td>
                 <td>{r.comment}</td>
                 <td>{new Date(r.created_at).toLocaleString()}</td>
-                <td>
-                  <button className="btn-delete" onClick={() => removeRecord(r.id)}>
-                    Удалить
-                  </button>
-                </td>
+
+                {!isCadet && (
+                  <td>
+                    <button className="btn-delete" onClick={() => removeRecord(r.id)}>
+                      Удалить
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

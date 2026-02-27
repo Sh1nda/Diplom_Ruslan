@@ -8,16 +8,22 @@ from app import models
 from app.schemas.discipline import DisciplineCreate, DisciplineRecordOut
 from app.models.user import UserRole
 
-# ВАЖНО: router должен быть объявлен ДО использования
 router = APIRouter(prefix="/discipline", tags=["discipline"])
 
 
+# ⬆⬆⬆ КАДЕТ МОЖЕТ СМОТРЕТЬ ДИСЦИПЛИНУ
 @router.get("/", response_model=List[DisciplineRecordOut])
 def list_discipline(
     group_id: Optional[int] = None,
     cadet_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER)),
+    user=Depends(
+        require_role(
+            UserRole.ADMIN,
+            UserRole.COMMANDER,
+            UserRole.CADET,     # ← ДОБАВЛЕНО
+        )
+    ),
 ):
     q = db.query(models.DisciplineRecord)
 
@@ -46,6 +52,7 @@ def list_discipline(
     ]
 
 
+# ⬆⬆⬆ СОЗДАВАТЬ МОГУТ ТОЛЬКО АДМИН И КОМАНДИР
 @router.post("/", response_model=DisciplineRecordOut)
 def create_discipline(
     record_in: DisciplineCreate,
@@ -79,6 +86,7 @@ def create_discipline(
         comment=record.comment,
         created_at=record.created_at,
     )
+
 
 
 @router.delete("/{record_id}")

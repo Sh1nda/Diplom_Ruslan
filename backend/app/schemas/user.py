@@ -1,5 +1,5 @@
 # backend/app/schemas/user.py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from enum import Enum
 
 
@@ -29,6 +29,6 @@ class UserUpdate(BaseModel):
 class UserOut(UserBase):
     id: int
     is_active: bool
+    group_id: int | None = None   
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

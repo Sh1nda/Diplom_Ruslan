@@ -16,14 +16,23 @@ from app.schemas.groups import (
 router = APIRouter(prefix="/groups", tags=["groups"])
 
 
+# ⬆⬆⬆ КАДЕТ МОЖЕТ СМОТРЕТЬ ГРУППЫ
 @router.get("/", response_model=List[Group])
 def list_groups(
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
+    user=Depends(
+        require_role(
+            UserRole.ADMIN,
+            UserRole.COMMANDER,
+            UserRole.TEACHER,
+            UserRole.CADET,   # ← ДОБАВЛЕНО
+        )
+    ),
 ):
     return db.query(models.Group).all()
 
 
+# ⬆⬆⬆ СОЗДАВАТЬ ГРУППЫ — ТОЛЬКО АДМИН
 @router.post("/", response_model=Group)
 def create_group(
     group_in: GroupCreate,
@@ -37,11 +46,19 @@ def create_group(
     return group
 
 
+# ⬆⬆⬆ КАДЕТ МОЖЕТ СМОТРЕТЬ ОДНУ ГРУППУ
 @router.get("/{group_id}", response_model=Group)
 def get_group(
     group_id: int,
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
+    user=Depends(
+        require_role(
+            UserRole.ADMIN,
+            UserRole.COMMANDER,
+            UserRole.TEACHER,
+            UserRole.CADET,   # ← ДОБАВЛЕНО
+        )
+    ),
 ):
     group = db.query(models.Group).get(group_id)
     if not group:
@@ -49,11 +66,19 @@ def get_group(
     return group
 
 
+# ⬆⬆⬆ КАДЕТ МОЖЕТ СМОТРЕТЬ СОСТАВ ГРУППЫ
 @router.get("/{group_id}/members", response_model=List[GroupMemberOut])
 def list_group_members(
     group_id: int,
     db: Session = Depends(get_db),
-    user=Depends(require_role(UserRole.ADMIN, UserRole.COMMANDER, UserRole.TEACHER)),
+    user=Depends(
+        require_role(
+            UserRole.ADMIN,
+            UserRole.COMMANDER,
+            UserRole.TEACHER,
+            UserRole.CADET,   # ← ДОБАВЛЕНО
+        )
+    ),
 ):
     members = (
         db.query(models.GroupMember)
@@ -71,6 +96,7 @@ def list_group_members(
     ]
 
 
+# ⬆⬆⬆ ДОБАВЛЯТЬ УЧАСТНИКОВ — ТОЛЬКО АДМИН И КОМАНДИР
 @router.post("/{group_id}/members", response_model=GroupMember)
 def add_group_member(
     group_id: int,
@@ -88,6 +114,7 @@ def add_group_member(
     return member
 
 
+# ⬆⬆⬆ УДАЛЯТЬ УЧАСТНИКОВ — ТОЛЬКО АДМИН И КОМАНДИР
 @router.delete("/members/{member_id}")
 def delete_group_member(
     member_id: int,
@@ -102,6 +129,7 @@ def delete_group_member(
     return {"ok": True}
 
 
+# ⬆⬆⬆ УДАЛЯТЬ ГРУППЫ — ТОЛЬКО АДМИН
 @router.delete("/{group_id}")
 def delete_group(
     group_id: int,
